@@ -19,7 +19,7 @@ func init() {
 
 func main() {
 	//Set up glfw and gl
-	fmt.Println("Starting")
+	fmt.Println("Initializing...")
 	err := glfw.Init()
 	if err != nil {
 		log.Fatal("Could not initialize GLFW", err)
