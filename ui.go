@@ -1,22 +1,31 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/inkyblackness/imgui-go/v4"
 )
 
+func ShowDebugWindow() {
+	imgui.Begin("Debug")
+	imgui.Text(fmt.Sprintf("FPS: %.2f", imgui.CurrentIO().Framerate()))
+	imgui.Text(fmt.Sprint("Selected", CurrentlySelected))
+	imgui.End()
+
+}
 func ShowUI(p *Project) {
 	imgui.Begin("Project")
-	if imgui.TreeNodeV(p.Name, imgui.TreeNodeFlagsFramed) {
-		for _, b := range p.Bodies {
-			if imgui.TreeNodeV(b.Name, imgui.TreeNodeFlagsFramed) {
-				imgui.Text(b.Description)
-				imgui.TreePop()
-			}
+	//imgui.PushStyleColor(imgui.StyleColor, imgui.Vec4{1, 0, 0, 1})
+
+	if imgui.TreeNodeV(p.Name, imgui.TreeNodeFlagsOpenOnDoubleClick) {
+		for i := range p.Items {
+			p.Items[i].BuildTreeItem()
 		}
 		imgui.TreePop()
 	}
+	//imgui.PopStyleColor()
+
 	imgui.End()
 
 }

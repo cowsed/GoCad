@@ -11,7 +11,6 @@ import (
 )
 
 var clearColor = [3]float32{0.0, 0.0, 0.0}
-var currentProject Project = Project{"Test Project", []Body{{"Square", "Just a square"}, {"Circle", "Just a circle"}}}
 
 func init() {
 	// This is needed to arrange that main() runs on main thread.
@@ -55,6 +54,7 @@ func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
 		//Draw UI
 		ShowMainMenuBar(&currentProject)
 		ShowUI(&currentProject)
+		ShowDebugWindow()
 		// Rendering
 		imgui.Render() // This call only creates the draw data list. Actual rendering to framebuffer is done below.
 
