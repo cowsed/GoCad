@@ -30,6 +30,18 @@ const (
 	GLFWClientAPIOpenGL3 GLFWClientAPI = "OpenGL3"
 )
 
+type Clipboard struct {
+	Platform *GLFW
+}
+
+func (board Clipboard) Text() (string, error) {
+	return board.Platform.ClipboardText()
+}
+
+func (board Clipboard) SetText(text string) {
+	board.Platform.SetClipboardText(text)
+}
+
 // GLFW implements a platform based on github.com/go-gl/glfw (v3.2).
 type GLFW struct {
 	imguiIO imgui.IO

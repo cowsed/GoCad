@@ -3,13 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"runtime"
 
-	"github.com/go-gl/gl/v3.2-core/gl"
-	"github.com/go-gl/glfw/v3.2/glfw"
+	renderers "github.com/cowsed/GoCad/Renderer"
 	"github.com/inkyblackness/imgui-go/v4"
-	"github.com/cowsed/GoCad/Renderer"
 )
+
+var clearColor = [3]float32{0.0, 0.0, 0.0}
+var currentProject Project = Project{"Test Project", []Body{{"Square", "Just a square"}, {"Circle", "Just a circle"}}}
 
 func init() {
 	// This is needed to arrange that main() runs on main thread.
@@ -20,48 +22,50 @@ func init() {
 func main() {
 	//Set up glfw and gl
 	fmt.Println("Initializing...")
-	err := glfw.Init()
-	if err != nil {
-		log.Fatal("Could not initialize GLFW", err)
-	}
-	defer glfw.Terminate()
-
-	window, err := glfw.CreateWindow(640, 480, "GoCad", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	window.MakeContextCurrent()
-	err = gl.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
-	//Setup IMGUI
 	context := imgui.CreateContext(nil)
 	defer context.Destroy()
 	io := imgui.CurrentIO()
 
+	platform, err := renderers.NewGLFW(io, renderers.GLFWClientAPIOpenGL3)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(-1)
+	}
+	defer platform.Dispose()
+
 	renderer, err := renderers.NewOpenGL3(io)
 	if err != nil {
 		log.Fatalf("%v\n", err)
-
 	}
 	defer renderer.Dispose()
 
-	Run(window)
+	Run(platform, renderer)
 }
-func Run(window *glfw.Window) {
-	for !window.ShouldClose() {
 
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-		gl.Enable(gl.DEPTH_TEST)
-		gl.ClearColor(1, 0, 0, 1)
+func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
+	imgui.CurrentIO().SetClipboard(renderers.Clipboard{Platform: p})
 
-		//Do Imgui Stuff
-		imgui.Render()
+	for !p.ShouldStop() {
+		p.ProcessEvents()
 
-		// Do OpenGL stuff.
-		window.SwapBuffers()
-		glfw.PollEvents()
+		// Signal start of a new frame
+		p.NewFrame()
+		imgui.NewFrame()
+
+		//Draw UI
+		ShowMainMenuBar(&currentProject)
+		ShowUI(&currentProject)
+		// Rendering
+		imgui.Render() // This call only creates the draw data list. Actual rendering to framebuffer is done below.
+
+		r.PreRender(clearColor)
+		// A this point, the application could perform its own rendering...
+		// app.RenderScene()
+
+		r.Render(p.DisplaySize(), p.FramebufferSize(), imgui.RenderedDrawData())
+		p.PostRender()
+
+		// sleep to avoid 100% CPU usage for this demo
+		//<-time.After(sleepDuration)
 	}
 }
