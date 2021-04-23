@@ -1,13 +1,24 @@
-// +build glfw
 package renderers
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"runtime"
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/inkyblackness/imgui-go/v4"
+)
+
+//Constants
+const (
+	windowWidth  = 1280
+	windowHeight = 720
+
+	mouseButtonPrimary   = 0
+	mouseButtonSecondary = 1
+	mouseButtonTertiary  = 2
+	mouseButtonCount     = 3
 )
 
 // GLFWClientAPI identifies the render system that shall be initialized.
@@ -49,7 +60,7 @@ func NewGLFW(io imgui.IO, clientAPI GLFWClientAPI) (*GLFW, error) {
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, 1)
 	default:
 		glfw.Terminate()
-		return nil, ErrUnsupportedClientAPI
+		return nil, errors.New("unsupported GLFW Version")
 	}
 
 	window, err := glfw.CreateWindow(windowWidth, windowHeight, "ImGui-Go GLFW+"+string(clientAPI)+" example", nil, nil)
