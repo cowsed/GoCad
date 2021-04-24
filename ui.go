@@ -70,6 +70,24 @@ func ShowMainMenuBar(p *Project) {
 				imgui.ColorEdit3("##ClearColor", &clearColor)
 				imgui.EndMenu()
 			}
+			if imgui.BeginMenu("Vertex Settings") {
+				if imgui.BeginMenu("Normal Vertex Color") {
+					if imgui.ColorEdit3("##VertexColor", &pointColor) {
+						loc := gl.GetUniformLocation(testProgram, gl.Str("normal_color"+"\x00"))
+						gl.ProgramUniform3f(testProgram, loc, pointColor[0], pointColor[1], pointColor[2])
+					}
+					imgui.EndMenu()
+				}
+				if imgui.BeginMenu("Selection Vertex Color") {
+					if imgui.ColorEdit3("##SelectionColor", &selectionColor) {
+						loc := gl.GetUniformLocation(testProgram, gl.Str("selected_color"+"\x00"))
+						gl.ProgramUniform3f(testProgram, loc, selectionColor[0], selectionColor[1], selectionColor[2])
+					}
+					imgui.EndMenu()
+				}
+				imgui.EndMenu()
+			}
+
 			if imgui.BeginMenu("PointSize") {
 				if imgui.DragFloatV("##PointSizeControl", &pointSize, .01, 0, 30, "%.3f", imgui.SliderFlagsNone) {
 					gl.PointSize(pointSize)
