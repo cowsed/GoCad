@@ -4,13 +4,28 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/inkyblackness/imgui-go/v4"
 )
 
 func ShowDebugWindow() {
+	io := imgui.CurrentIO()
 	imgui.Begin("Debug")
-	imgui.Text(fmt.Sprintf("FPS: %.2f", imgui.CurrentIO().Framerate()))
+	imgui.Text(fmt.Sprintf("FPS: %.2f", io.Framerate()))
+
 	imgui.Text(fmt.Sprint("Selected", CurrentlySelected))
+
+	if imgui.TreeNode("Imgui Metrics") {
+		imgui.Text(fmt.Sprintf("Imgui Capture Mouse: %v", io.WantCaptureMouse()))
+		imgui.Text(fmt.Sprintf("Imgui Capture Keyboard: %v", io.WantCaptureKeyboard()))
+
+		imgui.Text(fmt.Sprintf("Active Allocations: %v", io.MetricsActiveAllocations()))
+		imgui.Text(fmt.Sprintf("Active Windows: %v", io.MetricsActiveWindows()))
+
+		imgui.Text(fmt.Sprintf("Render Indices: %v", io.MetricsRenderIndices()))
+		imgui.Text(fmt.Sprintf("Render Vertices: %v", io.MetricsRenderVertices()))
+		imgui.TreePop()
+	}
 	imgui.End()
 
 }
@@ -53,6 +68,12 @@ func ShowMainMenuBar(p *Project) {
 		if imgui.BeginMenu("View") {
 			if imgui.BeginMenu("Clear Color") {
 				imgui.ColorEdit3("##ClearColor", &clearColor)
+				imgui.EndMenu()
+			}
+			if imgui.BeginMenu("PointSize") {
+				if imgui.DragFloatV("##PointSizeControl", &pointSize, .01, 0, 30, "%.3f", imgui.SliderFlagsNone) {
+					gl.PointSize(pointSize)
+				}
 				imgui.EndMenu()
 			}
 			imgui.EndMenu()

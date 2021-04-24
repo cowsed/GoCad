@@ -10,8 +10,6 @@ import (
 	"github.com/inkyblackness/imgui-go/v4"
 )
 
-var clearColor = [3]float32{0.0, 0.0, 0.0}
-
 func init() {
 	// This is needed to arrange that main() runs on main thread.
 	// See documentation for functions that are only allowed to be called from the main thread.
@@ -19,6 +17,7 @@ func init() {
 }
 
 func main() {
+
 	//Set up glfw and gl
 	fmt.Println("Initializing...")
 	context := imgui.CreateContext(nil)
@@ -38,6 +37,7 @@ func main() {
 	}
 	defer renderer.Dispose()
 
+	InitRender()
 	Run(platform, renderer)
 }
 
@@ -59,8 +59,13 @@ func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
 		imgui.Render() // This call only creates the draw data list. Actual rendering to framebuffer is done below.
 
 		r.PreRender(clearColor)
+
+		//if imgui.CurrentIO().WantCaptureMouse() {
+
+		//}
+
 		// A this point, the application could perform its own rendering...
-		// app.RenderScene()
+		RenderModel()
 
 		r.Render(p.DisplaySize(), p.FramebufferSize(), imgui.RenderedDrawData())
 		p.PostRender()
