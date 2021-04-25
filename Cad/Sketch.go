@@ -1,14 +1,13 @@
 package cad
 
 import (
-	_ "embed"
+	_ "embed" //Embed for loading shaders from file system
 	"fmt"
 	"log"
 
+	render "github.com/cowsed/GoCad/Render"
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/inkyblackness/imgui-go/v4"
-
-	render "github.com/cowsed/GoCad/Render"
 )
 
 //go:embed gl-shader/base_vertex.vert
@@ -17,59 +16,46 @@ var baseVertSource string
 //go:embed gl-shader/base_vertex.frag
 var baseFragSource string
 
+//SketchVertex is a vertex in a sketch. Need only be 2d
 type SketchVertex struct {
 	X, Y float32
 }
 
+//Sketch is the basic cad sketch
 type Sketch struct {
 	//Sketch Stuff
 	Name     string
 	Path     string
 	Vertices []SketchVertex
 
-	//Opengl Stuff
-	program          uint32
-	disposeProgram   bool
-	vao              uint32
-	disposeVao       bool
-	positionVbo      uint32 //Handle to VBO for draw_points
-	stateVbo         uint32 //Handle to VBO for vertex_states
-	disposeVbos      bool
-	gl_points        []float32 //Holds opengl representation of points
-	gl_vertex_states []uint32  //Holds selection, hover information about points
+	vao            uint32
+	disposeVao     bool
+	positionVbo    uint32 //Handle to VBO for draw_points
+	stateVbo       uint32 //Handle to VBO for vertex_states
+	disposeVbos    bool
+	glPoints       []float32 //Holds opengl representation of points
+	glVertexStates []uint32  //Holds selection, hover information about points
 }
 
+//InitGL sets up all necessary GL stuff
 func (s *Sketch) InitGL() {
 	//Delete Old OpenGL Stuff
 	if s.disposeVbos {
 		gl.DeleteBuffers(1, &s.positionVbo)
 		gl.DeleteBuffers(1, &s.stateVbo)
 	}
-	if s.disposeProgram {
-		gl.DeleteProgram(s.program)
-	}
 	if s.disposeVao {
 		gl.DeleteVertexArrays(1, &s.vao)
 	}
-	log.Println("Initiating sketch")
-	//Create Program (TODO May want to make a single program for all sketches when there can be multiple)
-	s.program = render.MakeProgram(baseVertSource, baseFragSource)
-	//Set Program Uniforms
-	render.SetUniform3f(s.program, "normal_color", render.PointColor)
-	render.SetUniform3f(s.program, "selected_color", render.SelectionColor)
-	render.SetUniform3f(s.program, "hovered_color", render.HoverColor)
 
 	//Generate VBO, VAO
 	s.MakeDrawData()
 	s.makeVao()
 	s.UpdateDrawData()
 
-	log.Println("vao", s.vao)
-	log.Println("posVBO", s.positionVbo)
-	log.Println("stateVBO", s.stateVbo)
-
 }
 
+//makeVao creates the sketch vao generates vbos
 func (s *Sketch) makeVao() {
 	//Bind Points
 	gl.GenVertexArrays(1, &s.vao)
@@ -82,24 +68,27 @@ func (s *Sketch) makeVao() {
 
 }
 
+//MakeDrawData transforms the sketch points and lines to opengl points and lines
 func (s *Sketch) MakeDrawData() {
-	s.gl_points = make([]float32, 3*len(s.Vertices))
+	s.glPoints = make([]float32, 3*len(s.Vertices))
 	for i := range s.Vertices {
-		s.gl_points[i*3] = s.Vertices[i].X
-		s.gl_points[i*3+1] = s.Vertices[i].Y
-		s.gl_points[i*3+2] = 0.0
+		s.glPoints[i*3] = s.Vertices[i].X
+		s.glPoints[i*3+1] = s.Vertices[i].Y
+		s.glPoints[i*3+2] = 0.0
 	}
-	log.Println(s.gl_points)
+	log.Println(s.glPoints)
 
-	s.gl_vertex_states = []uint32{2, 2, 2}
+	s.glVertexStates = []uint32{2, 0, 2, 0}
 }
 
+//UpdateDrawData takes the newly made draw data and uploads it to the gpu
+//Needs a way to check if the length has changed cuz then new vao and vbos must be created
 func (s *Sketch) UpdateDrawData() {
 	gl.BindVertexArray(s.vao)
 
 	//Bind positions
 	gl.BindBuffer(gl.ARRAY_BUFFER, s.positionVbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(s.gl_points), gl.Ptr(s.gl_points), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, 4*len(s.glPoints), gl.Ptr(s.glPoints), gl.STATIC_DRAW)
 
 	//Enable positions
 	gl.EnableVertexAttribArray(0)
@@ -108,7 +97,7 @@ func (s *Sketch) UpdateDrawData() {
 
 	//Bind States
 	gl.BindBuffer(gl.ARRAY_BUFFER, s.stateVbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(s.gl_vertex_states), gl.Ptr(s.gl_vertex_states), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, 4*len(s.glVertexStates), gl.Ptr(s.glVertexStates), gl.STATIC_DRAW)
 
 	//Enable States
 	gl.EnableVertexAttribArray(1)
@@ -117,19 +106,23 @@ func (s *Sketch) UpdateDrawData() {
 
 }
 
+//Draw Actually draws the sketch
 func (s *Sketch) Draw() {
 
-	gl.UseProgram(s.program)
+	gl.UseProgram(render.SketchProgram)
 
 	gl.BindVertexArray(s.vao)
-	gl.DrawArrays(gl.POINTS, 0, int32(len(s.gl_points)/3))
-	gl.DrawArrays(gl.LINE_LOOP, 0, int32(len(s.gl_points)/3))
+	gl.DrawArrays(gl.POINTS, 0, int32(len(s.glPoints)/3))
+	gl.DrawArrays(gl.LINE_LOOP, 0, int32(len(s.glPoints)/3))
 
 }
 
+//SetPath sets the ppath of a sketch
 func (s *Sketch) SetPath(parent string) {
 	s.Path = parent + "/" + s.Name
 }
+
+//BuildTreeItem creates the ui for the treeview
 func (s *Sketch) BuildTreeItem() {
 	open := imgui.TreeNodeV(s.Name+"{Sketch}", imgui.TreeNodeFlagsAllowItemOverlap+imgui.TreeNodeFlagsOpenOnDoubleClick)
 	if open {

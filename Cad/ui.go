@@ -10,6 +10,7 @@ import (
 	render "github.com/cowsed/GoCad/Render"
 )
 
+//ShowDebugWindow shows debug information
 func ShowDebugWindow() {
 	io := imgui.CurrentIO()
 	imgui.Begin("Debug")
@@ -31,6 +32,8 @@ func ShowDebugWindow() {
 	imgui.End()
 
 }
+
+//ShowUI shows the treeview of the model
 func ShowUI(p *Project) {
 	imgui.Begin("Project")
 	//imgui.PushStyleColor(imgui.StyleColor, imgui.Vec4{1, 0, 0, 1})
@@ -47,6 +50,7 @@ func ShowUI(p *Project) {
 
 }
 
+//ShowMainMenuBar creates the main menu bar
 func ShowMainMenuBar(p *Project) {
 	if imgui.BeginMainMenuBar() {
 		if imgui.BeginMenu("File") {
@@ -72,33 +76,33 @@ func ShowMainMenuBar(p *Project) {
 				imgui.ColorEdit3("##ClearColor", &render.ClearColor)
 				imgui.EndMenu()
 			}
-			/*
-				if imgui.BeginMenu("Vertex Settings") {
-					if imgui.BeginMenu("Normal Vertex Color") {
-						if imgui.ColorEdit3("##VertexColor", &pointColor) {
-							loc := gl.GetUniformLocation(testProgram, gl.Str("normal_color"+"\x00"))
-							gl.ProgramUniform3f(testProgram, loc, pointColor[0], pointColor[1], pointColor[2])
-						}
-						imgui.EndMenu()
-					}
-					if imgui.BeginMenu("Selection Vertex Color") {
-						if imgui.ColorEdit3("##SelectionColor", &selectionColor) {
-							loc := gl.GetUniformLocation(testProgram, gl.Str("selected_color"+"\x00"))
-							gl.ProgramUniform3f(testProgram, loc, selectionColor[0], selectionColor[1], selectionColor[2])
-						}
-						imgui.EndMenu()
-					}
-					if imgui.BeginMenu("Hovered Vertex Color") {
-						if imgui.ColorEdit3("##HoverColor", &hoverColor) {
-							loc := gl.GetUniformLocation(testProgram, gl.Str("hovered_color"+"\x00"))
-							gl.ProgramUniform3f(testProgram, loc, hoverColor[0], hoverColor[1], hoverColor[2])
-						}
-						imgui.EndMenu()
-					}
 
+			if imgui.BeginMenu("Vertex Settings") {
+				if imgui.BeginMenu("Normal Vertex Color") {
+					if imgui.ColorEdit3("##VertexColor", &render.PointColor) {
+						loc := gl.GetUniformLocation(render.SketchProgram, gl.Str("normal_color"+"\x00"))
+						gl.ProgramUniform3f(render.SketchProgram, loc, render.PointColor[0], render.PointColor[1], render.PointColor[2])
+					}
 					imgui.EndMenu()
 				}
-			*/
+				if imgui.BeginMenu("Selection Vertex Color") {
+					if imgui.ColorEdit3("##SelectionColor", &render.SelectionColor) {
+						loc := gl.GetUniformLocation(render.SketchProgram, gl.Str("selected_color"+"\x00"))
+						gl.ProgramUniform3f(render.SketchProgram, loc, render.SelectionColor[0], render.SelectionColor[1], render.SelectionColor[2])
+					}
+					imgui.EndMenu()
+				}
+				if imgui.BeginMenu("Hovered Vertex Color") {
+					if imgui.ColorEdit3("##HoverColor", &render.HoverColor) {
+						loc := gl.GetUniformLocation(render.SketchProgram, gl.Str("hovered_color"+"\x00"))
+						gl.ProgramUniform3f(render.SketchProgram, loc, render.HoverColor[0], render.HoverColor[1], render.HoverColor[2])
+					}
+					imgui.EndMenu()
+				}
+
+				imgui.EndMenu()
+			}
+
 			if imgui.BeginMenu("PointSize") {
 				if imgui.SliderFloatV("##PointSizeControl", &render.PointSize, 0, 30, "%.3f", imgui.SliderFlagsNone) {
 					gl.PointSize(render.PointSize)

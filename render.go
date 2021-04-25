@@ -5,6 +5,7 @@ import (
 	"github.com/go-gl/gl/v3.2-core/gl"
 )
 
+//InitRender Initializes all the objects that need to be initialized
 func InitRender() {
 	currentProject.InitGL()
 
@@ -12,9 +13,9 @@ func InitRender() {
 	gl.PointSize(render.PointSize)
 }
 
-//Renders the model defined by Current Project
+//RenderModel Renders the model defined by Current Project
 func RenderModel() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	currentProject.Draw()
+	currentProject.DrawProject()
 }

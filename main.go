@@ -34,6 +34,7 @@ var currentProject cad.Project = cad.Project{
 								{0, 0.75},
 								{-0.5, -0.5},
 								{0.5, -0.5},
+								{0, -.25},
 							},
 						},
 					},
@@ -74,6 +75,7 @@ func main() {
 	Run(platform, renderer)
 }
 
+//Run runs the program
 func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
 	imgui.CurrentIO().SetClipboard(renderers.Clipboard{Platform: p})
 
@@ -103,7 +105,5 @@ func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
 		r.Render(p.DisplaySize(), p.FramebufferSize(), imgui.RenderedDrawData())
 		p.PostRender()
 
-		// sleep to avoid 100% CPU usage for this demo
-		//<-time.After(sleepDuration)
 	}
 }

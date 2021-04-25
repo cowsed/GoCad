@@ -1,7 +1,9 @@
 package cad
 
+//SelectableType holds different types of things that can be selected
 type SelectableType int
 
+//All the types of SelectableType
 const (
 	VertexType SelectableType = iota
 	LineType
@@ -10,41 +12,8 @@ const (
 	BodyType
 )
 
-//Holds Primitives for selection
+//Selectable holds cad primitives for selection
 type Selectable interface {
 	Path() string
 	Type() SelectableType
-}
-
-type Vertex struct {
-	path string
-}
-
-func (v *Vertex) Path() string {
-	return v.path
-}
-func (v *Vertex) Type() SelectableType {
-	return VertexType
-}
-
-type Line struct {
-	path string
-}
-
-func (l *Line) Path() string {
-	return l.path
-}
-func (l *Line) Type() SelectableType {
-	return LineType
-}
-
-type Face struct {
-	path string
-}
-
-func (f *Face) Path() string {
-	return f.path
-}
-func (f *Face) Type() SelectableType {
-	return FaceType
 }
