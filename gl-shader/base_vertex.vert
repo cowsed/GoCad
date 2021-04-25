@@ -1,10 +1,10 @@
 #version 410
 in vec3 position;
-in vec4 vert_color;
+in uint vert_color;
 
-out vec4 color_from_vshader;
+flat out uint mouse_state;
 
 void main() {
-    color_from_vshader=vert_color;
+    mouse_state=vert_color;
     gl_Position = vec4(position, 1.0);
 }
