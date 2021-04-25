@@ -1,38 +1,9 @@
-package main
+package cad
 
 import (
 	"github.com/inkyblackness/imgui-go/v4"
 )
 
-var currentProject Project = Project{
-	Name: "Test Project",
-	Items: []TreeItem{
-		&Body{
-			Name:        "Square",
-			TreePath:    "Test Project/Square",
-			Description: "Just a square",
-			Show:        true,
-			Selected:    false,
-			Parts: []Part{
-				{
-					Name:        "Square",
-					Path:        "Test Project/Square/Square",
-					Description: "Interior Part of it yknow",
-					Chain: []Operation{
-						&Sketch{
-							name: "SquareSketch",
-							path: "Test Project/Square/Square/SquareSketch",
-							vertices: []SketchVertex{
-								{0, 0.75},
-								{-0.5, -0.5},
-								{0.5, -0.5},
-							},
-						},
-					},
-				},
-			}},
-	},
-}
 var CurrentlySelected = map[string]Selectable{}
 
 type Project struct {
@@ -60,6 +31,7 @@ type TreeItem interface {
 
 type Body struct {
 	Name        string
+	ParentPath  string
 	TreePath    string
 	Description string
 	Show        bool
@@ -83,7 +55,7 @@ func (b *Body) BuildTreeItem() {
 		if imgui.BeginPopupContextItemV(b.Name+"ContextMenu", imgui.PopupFlagsMouseButtonRight) {
 			if imgui.Checkbox("Selected", &b.Selected) {
 				if b.Selected {
-					b.SetPath(currentProject.Name)
+					b.SetPath(b.ParentPath)
 					CurrentlySelected[b.Path()] = b
 				} else {
 					delete(CurrentlySelected, b.Path())

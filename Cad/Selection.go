@@ -1,4 +1,4 @@
-package main
+package cad
 
 type SelectableType int
 

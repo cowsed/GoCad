@@ -1,4 +1,4 @@
-package main
+package cad
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/inkyblackness/imgui-go/v4"
+
+	render "github.com/cowsed/GoCad/Render"
 )
 
 func ShowDebugWindow() {
@@ -67,7 +69,7 @@ func ShowMainMenuBar(p *Project) {
 		}
 		if imgui.BeginMenu("View") {
 			if imgui.BeginMenu("Clear Color") {
-				imgui.ColorEdit3("##ClearColor", &clearColor)
+				imgui.ColorEdit3("##ClearColor", &render.ClearColor)
 				imgui.EndMenu()
 			}
 			/*
@@ -98,8 +100,8 @@ func ShowMainMenuBar(p *Project) {
 				}
 			*/
 			if imgui.BeginMenu("PointSize") {
-				if imgui.SliderFloatV("##PointSizeControl", &pointSize, 0, 30, "%.3f", imgui.SliderFlagsNone) {
-					gl.PointSize(pointSize)
+				if imgui.SliderFloatV("##PointSizeControl", &render.PointSize, 0, 30, "%.3f", imgui.SliderFlagsNone) {
+					gl.PointSize(render.PointSize)
 				}
 				imgui.EndMenu()
 			}

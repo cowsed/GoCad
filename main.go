@@ -3,12 +3,44 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 
-	renderers "github.com/cowsed/GoCad/Renderer"
+	cad "github.com/cowsed/GoCad/Cad"
+	renderers "github.com/cowsed/GoCad/Platform"
+	render "github.com/cowsed/GoCad/Render"
+
 	"github.com/inkyblackness/imgui-go/v4"
 )
+
+var currentProject cad.Project = cad.Project{
+	Name: "Test Project",
+	Items: []cad.TreeItem{
+		&cad.Body{
+			Name:        "Square",
+			TreePath:    "Test Project/Square",
+			Description: "Just a square",
+			Show:        true,
+			Selected:    false,
+			Parts: []cad.Part{
+				{
+					Name:        "Square",
+					Path:        "Test Project/Square/Square",
+					Description: "Interior Part of it yknow",
+					Chain: []cad.Operation{
+						&cad.Sketch{
+							Name: "SquareSketch",
+							Path: "Test Project/Square/Square/SquareSketch",
+							Vertices: []cad.SketchVertex{
+								{0, 0.75},
+								{-0.5, -0.5},
+								{0.5, -0.5},
+							},
+						},
+					},
+				},
+			}},
+	},
+}
 
 func init() {
 	// This is needed to arrange that main() runs on main thread.
@@ -18,7 +50,7 @@ func init() {
 
 func main() {
 
-	//Set up glfw and gl
+	//Setup IMGUI and other graphics
 	fmt.Println("Initializing...")
 	context := imgui.CreateContext(nil)
 	defer context.Destroy()
@@ -26,18 +58,19 @@ func main() {
 
 	platform, err := renderers.NewGLFW(io, renderers.GLFWClientAPIOpenGL3)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(-1)
+		log.Fatalf("Error Creating Platform: %v\n", err)
+
 	}
 	defer platform.Dispose()
 
 	renderer, err := renderers.NewOpenGL3(io)
 	if err != nil {
-		log.Fatalf("%v\n", err)
+		log.Fatalf("Error Creating Renderer: %v\n", err)
 	}
 	defer renderer.Dispose()
 
 	InitRender()
+
 	Run(platform, renderer)
 }
 
@@ -52,21 +85,21 @@ func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
 		imgui.NewFrame()
 
 		//Draw UI
-		ShowMainMenuBar(&currentProject)
-		ShowUI(&currentProject)
-		ShowDebugWindow()
-		// Rendering
+		cad.ShowMainMenuBar(&currentProject)
+		cad.ShowUI(&currentProject)
+		cad.ShowDebugWindow()
+		// Render UI
 		imgui.Render() // This call only creates the draw data list. Actual rendering to framebuffer is done below.
 
-		r.PreRender(clearColor)
+		r.PreRender(render.ClearColor)
 
+		//Accept input to the Cad Project
 		//if imgui.CurrentIO().WantCaptureMouse() {
-
 		//}
 
-		// A this point, the application could perform its own rendering...
+		//Render the CAD Project
 		RenderModel()
-
+		//Actually draw to the screen
 		r.Render(p.DisplaySize(), p.FramebufferSize(), imgui.RenderedDrawData())
 		p.PostRender()
 

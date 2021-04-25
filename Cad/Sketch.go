@@ -1,4 +1,4 @@
-package main
+package cad
 
 import (
 	_ "embed"
@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/inkyblackness/imgui-go/v4"
+
+	render "github.com/cowsed/GoCad/Render"
 )
 
 //go:embed gl-shader/base_vertex.vert
@@ -16,14 +18,14 @@ var baseVertSource string
 var baseFragSource string
 
 type SketchVertex struct {
-	x, y float32
+	X, Y float32
 }
 
 type Sketch struct {
 	//Sketch Stuff
-	name     string
-	path     string
-	vertices []SketchVertex
+	Name     string
+	Path     string
+	Vertices []SketchVertex
 
 	//Opengl Stuff
 	program          uint32
@@ -51,11 +53,11 @@ func (s *Sketch) InitGL() {
 	}
 	log.Println("Initiating sketch")
 	//Create Program (TODO May want to make a single program for all sketches when there can be multiple)
-	s.program = makeProgram(baseVertSource, baseFragSource)
+	s.program = render.MakeProgram(baseVertSource, baseFragSource)
 	//Set Program Uniforms
-	setUniform3f(s.program, "normal_color", pointColor)
-	setUniform3f(s.program, "selected_color", selectionColor)
-	setUniform3f(s.program, "hovered_color", hoverColor)
+	render.SetUniform3f(s.program, "normal_color", render.PointColor)
+	render.SetUniform3f(s.program, "selected_color", render.SelectionColor)
+	render.SetUniform3f(s.program, "hovered_color", render.HoverColor)
 
 	//Generate VBO, VAO
 	s.MakeDrawData()
@@ -81,10 +83,10 @@ func (s *Sketch) makeVao() {
 }
 
 func (s *Sketch) MakeDrawData() {
-	s.gl_points = make([]float32, 3*len(s.vertices))
-	for i := range s.vertices {
-		s.gl_points[i*3] = s.vertices[i].x
-		s.gl_points[i*3+1] = s.vertices[i].y
+	s.gl_points = make([]float32, 3*len(s.Vertices))
+	for i := range s.Vertices {
+		s.gl_points[i*3] = s.Vertices[i].X
+		s.gl_points[i*3+1] = s.Vertices[i].Y
 		s.gl_points[i*3+2] = 0.0
 	}
 	log.Println(s.gl_points)
@@ -126,25 +128,25 @@ func (s *Sketch) Draw() {
 }
 
 func (s *Sketch) SetPath(parent string) {
-	s.path = parent + "/" + s.name
+	s.Path = parent + "/" + s.Name
 }
 func (s *Sketch) BuildTreeItem() {
-	open := imgui.TreeNodeV(s.name+"{Sketch}", imgui.TreeNodeFlagsAllowItemOverlap+imgui.TreeNodeFlagsOpenOnDoubleClick)
+	open := imgui.TreeNodeV(s.Name+"{Sketch}", imgui.TreeNodeFlagsAllowItemOverlap+imgui.TreeNodeFlagsOpenOnDoubleClick)
 	if open {
-		imgui.BeginTableV(s.name+"Vertices", 2, imgui.TableFlagsBorders, imgui.Vec2{}, 0)
+		imgui.BeginTableV(s.Name+"Vertices", 2, imgui.TableFlagsBorders, imgui.Vec2{}, 0)
 		imgui.Text("Vertices")
 		imgui.TableNextColumn()
 		imgui.Text("X")
 		imgui.TableNextColumn()
 		imgui.Text("Y")
 		imgui.TableNextRow()
-		for i := range s.vertices {
+		for i := range s.Vertices {
 			imgui.TableNextColumn()
 
-			imgui.Selectable(fmt.Sprint(s.vertices[i].x))
+			imgui.Selectable(fmt.Sprint(s.Vertices[i].X))
 
 			imgui.TableNextColumn()
-			imgui.Selectable(fmt.Sprint(s.vertices[i].y))
+			imgui.Selectable(fmt.Sprint(s.Vertices[i].Y))
 			imgui.TableNextRow()
 		}
 		imgui.EndTable()
