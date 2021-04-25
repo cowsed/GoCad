@@ -71,7 +71,18 @@ func ShowMainMenuBar(p *Project) {
 			}
 			imgui.EndMenu()
 		}
+
 		if imgui.BeginMenu("View") {
+			if imgui.BeginMenu("FOV") {
+				imgui.DragFloat("##FOV", &render.FOV)
+				imgui.EndMenu()
+			}
+			if imgui.BeginMenu("Camera Type") {
+				imgui.RadioButtonInt("Perspective", (*int)(&p.CamType), 0)
+				imgui.RadioButtonInt("Orthographic", (*int)(&p.CamType), 1)
+
+				imgui.EndMenu()
+			}
 			if imgui.BeginMenu("Clear Color") {
 				imgui.ColorEdit3("##ClearColor", &render.ClearColor)
 				imgui.EndMenu()

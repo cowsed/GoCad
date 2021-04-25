@@ -7,6 +7,7 @@ import (
 
 	render "github.com/cowsed/GoCad/Render"
 	"github.com/go-gl/gl/v3.2-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/inkyblackness/imgui-go/v4"
 )
 
@@ -107,13 +108,21 @@ func (s *Sketch) UpdateDrawData() {
 }
 
 //Draw Actually draws the sketch
-func (s *Sketch) Draw() {
+func (s *Sketch) Draw(CamMatrix, ProjectionMatrix mgl32.Mat4) {
+
+	MVP := ProjectionMatrix.Mul4(CamMatrix)
+	MVPUniform := gl.GetUniformLocation(render.SketchProgram, gl.Str("MVP"+"\x00"))
+	gl.UniformMatrix4fv(MVPUniform, 1, false, &MVP[0])
 
 	gl.UseProgram(render.SketchProgram)
 
 	gl.BindVertexArray(s.vao)
-	gl.DrawArrays(gl.POINTS, 0, int32(len(s.glPoints)/3))
 	gl.DrawArrays(gl.LINE_LOOP, 0, int32(len(s.glPoints)/3))
+
+	gl.DrawArrays(gl.POINTS, 0, int32(len(s.glPoints)/3))
+
+}
+func (s *Sketch) HandleInput() {
 
 }
 
@@ -126,6 +135,8 @@ func (s *Sketch) SetPath(parent string) {
 func (s *Sketch) BuildTreeItem() {
 	open := imgui.TreeNodeV(s.Name+"{Sketch}", imgui.TreeNodeFlagsAllowItemOverlap+imgui.TreeNodeFlagsOpenOnDoubleClick)
 	if open {
+		imgui.Button("Solve(N/A)")
+
 		imgui.BeginTableV(s.Name+"Vertices", 2, imgui.TableFlagsBorders, imgui.Vec2{}, 0)
 		imgui.Text("Vertices")
 		imgui.TableNextColumn()

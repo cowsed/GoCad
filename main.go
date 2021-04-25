@@ -1,19 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 
 	cad "github.com/cowsed/GoCad/Cad"
 	renderers "github.com/cowsed/GoCad/Platform"
 	render "github.com/cowsed/GoCad/Render"
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 
 	"github.com/inkyblackness/imgui-go/v4"
 )
 
 var currentProject cad.Project = cad.Project{
-	Name: "Test Project",
+	Name:   "Test Project",
+	CamPos: mgl32.Vec3{0, 0, 3},
 	Items: []cad.TreeItem{
 		&cad.Body{
 			Name:        "Square",
@@ -31,15 +33,16 @@ var currentProject cad.Project = cad.Project{
 							Name: "SquareSketch",
 							Path: "Test Project/Square/Square/SquareSketch",
 							Vertices: []cad.SketchVertex{
-								{0, 0.75},
-								{-0.5, -0.5},
-								{0.5, -0.5},
-								{0, -.25},
+								{0, 1},
+								{1, -0},
+								{0, -1},
+								{-1, -0},
 							},
 						},
 					},
 				},
-			}},
+			},
+		},
 	},
 }
 
@@ -52,7 +55,7 @@ func init() {
 func main() {
 
 	//Setup IMGUI and other graphics
-	fmt.Println("Initializing...")
+	log.Println("Initializing...")
 	context := imgui.CreateContext(nil)
 	defer context.Destroy()
 	io := imgui.CurrentIO()
@@ -64,19 +67,25 @@ func main() {
 	}
 	defer platform.Dispose()
 
+	window := platform.Window()
+
 	renderer, err := renderers.NewOpenGL3(io)
 	if err != nil {
 		log.Fatalf("Error Creating Renderer: %v\n", err)
 	}
 	defer renderer.Dispose()
 
+	windowWidth, windowHeight := window.GetSize()
+	render.WindowWidth = windowWidth
+	render.WindowHeight = windowHeight
+
 	InitRender()
 
-	Run(platform, renderer)
+	Run(platform, renderer, window)
 }
 
 //Run runs the program
-func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
+func Run(p *renderers.GLFW, r *renderers.OpenGL3, window *glfw.Window) {
 	imgui.CurrentIO().SetClipboard(renderers.Clipboard{Platform: p})
 
 	for !p.ShouldStop() {
@@ -96,8 +105,9 @@ func Run(p *renderers.GLFW, r *renderers.OpenGL3) {
 		r.PreRender(render.ClearColor)
 
 		//Accept input to the Cad Project
-		//if imgui.CurrentIO().WantCaptureMouse() {
-		//}
+		if !imgui.CurrentIO().WantCaptureMouse() {
+			HandleInput(window)
+		}
 
 		//Render the CAD Project
 		RenderModel()

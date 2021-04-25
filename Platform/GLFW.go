@@ -99,6 +99,11 @@ func (platform *GLFW) Dispose() {
 	glfw.Terminate()
 }
 
+//Window returns the glfw window for handling input elsewhere
+func (platform *GLFW) Window() *glfw.Window {
+	return platform.window
+}
+
 // ShouldStop returns true if the window is to be closed.
 func (platform *GLFW) ShouldStop() bool {
 	return platform.window.ShouldClose()
