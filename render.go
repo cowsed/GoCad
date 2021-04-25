@@ -16,53 +16,7 @@ var hoverColor = [3]float32{0.0, 0.0, 1.0}
 
 var pointSize float32 = 8.0
 
-// makeVao initializes and returns a vertex array from the points provided.
-/*
-func makeVao(points []float32) uint32 {
-
-	//Bind Points
-
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(points), gl.Ptr(points), gl.STATIC_DRAW)
-
-	//Bind positions
-	gl.EnableVertexAttribArray(0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
-
-	var vbo2 uint32
-	gl.GenBuffers(1, &vbo2)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo2)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(vertex_states), gl.Ptr(vertex_states), gl.STATIC_DRAW)
-
-	//Bind States
-	gl.EnableVertexAttribArray(1)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo2)
-	gl.VertexAttribPointer(1, 1, gl.UNSIGNED_INT, false, 0, nil)
-
-	return vao
-}
-*/
 func InitRender() {
-
-	/*	testVao = makeVao(triangle)
-
-		testProgram = makeProgram(baseVertSource, baseFragSource)
-
-		//Set Uniforms
-		loc := gl.GetUniformLocation(testProgram, gl.Str("normal_color"+"\x00"))
-		gl.ProgramUniform3f(testProgram, loc, pointColor[0], pointColor[1], pointColor[2])
-		loc = gl.GetUniformLocation(testProgram, gl.Str("selected_color"+"\x00"))
-		gl.ProgramUniform3f(testProgram, loc, selectionColor[0], selectionColor[1], selectionColor[2])
-		loc = gl.GetUniformLocation(testProgram, gl.Str("hovered_color"+"\x00"))
-		gl.ProgramUniform3f(testProgram, loc, hoverColor[0], hoverColor[1], hoverColor[2])
-	*/
 	currentProject.InitGL()
 
 	//Set initial parameters
