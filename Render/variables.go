@@ -20,6 +20,7 @@ var FOV float32 = 45.0
 
 var WindowWidth int
 var WindowHeight int
+var WindowAspect float32
 
 var MouseSensitivity float32 = 3.0
 

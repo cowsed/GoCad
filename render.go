@@ -16,8 +16,8 @@ func InitRender() {
 
 //RenderModel Renders the model defined by Current Project
 func RenderModel() {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+	currentProject.DrawIDs()
 	currentProject.DrawProject()
 }
 

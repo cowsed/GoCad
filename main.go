@@ -78,6 +78,7 @@ func main() {
 	windowWidth, windowHeight := window.GetSize()
 	render.WindowWidth = windowWidth
 	render.WindowHeight = windowHeight
+	render.WindowAspect = float32(render.WindowWidth) / float32(render.WindowHeight)
 
 	InitRender()
 
@@ -98,7 +99,7 @@ func Run(p *renderers.GLFW, r *renderers.OpenGL3, window *glfw.Window) {
 		//Draw UI
 		cad.ShowMainMenuBar(&currentProject)
 		cad.ShowUI(&currentProject)
-		cad.ShowDebugWindow()
+		cad.ShowDebugWindow(&currentProject, window)
 		// Render UI
 		imgui.Render() // This call only creates the draw data list. Actual rendering to framebuffer is done below.
 
@@ -111,6 +112,7 @@ func Run(p *renderers.GLFW, r *renderers.OpenGL3, window *glfw.Window) {
 
 		//Render the CAD Project
 		RenderModel()
+
 		//Actually draw to the screen
 		r.Render(p.DisplaySize(), p.FramebufferSize(), imgui.RenderedDrawData())
 		p.PostRender()

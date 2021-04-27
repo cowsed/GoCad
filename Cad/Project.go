@@ -1,9 +1,14 @@
 package cad
 
 import (
+	"image"
+	"image/png"
 	"log"
+	"os"
+	"unsafe"
 
 	render "github.com/cowsed/GoCad/Render"
+	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/inkyblackness/imgui-go/v4"
@@ -20,14 +25,34 @@ type Project struct {
 
 	ProjectionMatrix mgl32.Mat4
 
-	CamType   render.CameraType
-	CamPos    mgl32.Vec3
-	CamAng    mgl32.Vec3
-	CamMatrix mgl32.Mat4
+	IDFramebuffer uint32
+	IDTex         uint32
+	CamType       render.CameraType
+	CamPos        mgl32.Vec3
+	CamAng        mgl32.Vec3
+	CamMatrix     mgl32.Mat4
 }
 
 //InitGL initializes all the sub parts' gl stuff
 func (p *Project) InitGL() {
+	//Create ID Framebuffer
+	gl.CreateFramebuffers(1, &p.IDFramebuffer)
+
+	//Create and setup texture to view ID Framebuffer
+	gl.GenTextures(1, &p.IDTex)
+	gl.BindTexture(gl.TEXTURE_2D, p.IDTex)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(render.WindowWidth), int32(render.WindowHeight), 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	//Link the two
+	gl.BindFramebuffer(gl.FRAMEBUFFER, p.IDFramebuffer)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, p.IDTex, 0)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+
+	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE {
+		log.Println("Framebuffer OK")
+	}
+
 	//Create render.SketchProgram
 	render.SketchProgram = render.MakeProgram(baseVertSource, baseFragSource)
 
@@ -43,31 +68,62 @@ func (p *Project) InitGL() {
 		p.Items[i].InitGL()
 	}
 }
+
+//SaveBuf somewhat of a debug function, saves the ID Framebuffer texture to a file
+func (p *Project) SaveBuf() {
+	outImage := image.NewRGBA(image.Rect(0, 0, render.WindowWidth, render.WindowHeight))
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, p.IDTex)
+
+	gl.GetTexImage(gl.TEXTURE_2D,
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		unsafe.Pointer(&outImage.Pix[0]))
+	f, _ := os.Create("out.png")
+	png.Encode(f, outImage)
+}
 func (p *Project) UpdateMatrices() {
 	p.CamMatrix = mgl32.LookAtV(p.CamPos, p.CamPos.Sub(mgl32.Vec3{0, 0, 3}), mgl32.Vec3{0, 1, 0})
 	if p.CamType == render.Perspective {
 		p.ProjectionMatrix = mgl32.Perspective(mgl32.DegToRad(render.FOV), float32(render.WindowWidth)/float32(render.WindowHeight), 0.1, 10)
 	} else {
 		var size float32 = 2
-		var aspect float32 = float32(render.WindowWidth) / float32(render.WindowHeight)
-		p.ProjectionMatrix = mgl32.Ortho(-size, size, -size/aspect, size/aspect, .1, 10.0)
+
+		p.ProjectionMatrix = mgl32.Ortho(-size, size, -size/render.WindowAspect, size/render.WindowAspect, .1, 10.0)
 
 	}
 }
 
 //DrawProject draws the project
 func (p *Project) DrawProject() {
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
 	p.UpdateMatrices()
 	for i := range p.Items {
 		p.Items[i].DrawChildren(p.CamMatrix, p.ProjectionMatrix)
 	}
 }
+func (p *Project) DrawIDs() {
+	//Bind ID Framebuffer
+	gl.BindFramebuffer(gl.FRAMEBUFFER, p.IDFramebuffer)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+	for i := range p.Items {
+		p.Items[i].DrawChildrenIDs(p.CamMatrix, p.ProjectionMatrix)
+	}
+
+	//Go Back to default framebuffer
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+}
 func (p *Project) HandleInput(window *glfw.Window) {
 	//Camera controls
+
 	act := window.GetMouseButton(glfw.MouseButton3)
 	if act == glfw.Press {
 		//Get mouse delta
 		//do some math
+
 		d := imgui.CurrentIO().MouseDelta()
 		fx := float32(render.WindowWidth)
 		fy := float32(render.WindowHeight)
@@ -80,135 +136,4 @@ func (p *Project) HandleInput(window *glfw.Window) {
 	for i := range p.Items {
 		p.Items[i].HandleInput()
 	}
-}
-
-//TreeItem is an interface for anything that can be held in a project
-type TreeItem interface {
-	SetPath(string)
-	BuildTreeItem()
-	InitGL()                             //Initialize all required VBOs, VAOs, and Programs
-	DrawChildren(mgl32.Mat4, mgl32.Mat4) //Actually Draw the data
-	HandleInput()
-}
-
-//Body is a holder for many parts that can be moved together
-type Body struct {
-	Name        string
-	ParentPath  string
-	TreePath    string
-	Description string
-	Show        bool
-	Selected    bool
-	Parts       []Part
-}
-
-//SetPath sets the path of the body
-func (b *Body) SetPath(parent string) {
-	b.TreePath = parent + "/" + b.Name
-}
-
-//Path gets the path in the project of the body
-func (b *Body) Path() string {
-	return b.TreePath
-}
-
-//Type returns the Type of the body for selections
-func (b *Body) Type() SelectableType {
-	return BodyType
-}
-
-//BuildTreeItem builds the ui for the treeview
-func (b *Body) BuildTreeItem() {
-
-	open := imgui.TreeNodeV(b.Name+"{Body}", imgui.TreeNodeFlagsAllowItemOverlap+imgui.TreeNodeFlagsOpenOnDoubleClick)
-	if open {
-		if imgui.BeginPopupContextItemV(b.Name+"ContextMenu", imgui.PopupFlagsMouseButtonRight) {
-			if imgui.Checkbox("Selected", &b.Selected) {
-				if b.Selected {
-					b.SetPath(b.ParentPath)
-					CurrentlySelected[b.Path()] = b
-				} else {
-					delete(CurrentlySelected, b.Path())
-				}
-			}
-			imgui.Text(b.Description)
-			imgui.EndPopup()
-		}
-		for i := range b.Parts {
-			b.Parts[i].BuildTreeItem()
-		}
-
-		imgui.TreePop()
-	}
-
-}
-
-//Draw draws the body to the screen the opengl way
-func (b *Body) DrawChildren(CamMatrix mgl32.Mat4, ProjectionMatrix mgl32.Mat4) {
-	for i := range b.Parts {
-		b.Parts[i].DrawOperations(CamMatrix, ProjectionMatrix)
-	}
-}
-
-//InitGL initializes all of the graphics stuff for its sub parts
-func (b *Body) InitGL() {
-	for i := range b.Parts {
-		b.Parts[i].InitGL()
-	}
-}
-
-//HandleInput handles the input on children
-func (b *Body) HandleInput() {
-	for i := range b.Parts {
-		b.Parts[i].HandleInput()
-	}
-}
-
-//Part is a part created by a chain of operations of sketches, extrudes, (analagous to the freecad PartDesign)
-type Part struct {
-	Name        string
-	Path        string
-	Description string
-	Chain       []Operation
-}
-
-//BuildTreeItem builds the ui for the treeview
-func (p *Part) BuildTreeItem() {
-	open := imgui.TreeNodeV(p.Name+"{Part}", imgui.TreeNodeFlagsAllowItemOverlap+imgui.TreeNodeFlagsOpenOnDoubleClick)
-	if open {
-		//Context Menu
-
-		//Operations UI
-		for i := range p.Chain {
-			p.Chain[i].BuildTreeItem()
-		}
-		imgui.TreePop()
-	}
-}
-
-//Draw draws all of its subparts in the opengl way
-func (p *Part) DrawOperations(CamMatrix, ProjectionMatrix mgl32.Mat4) {
-	for i := range p.Chain {
-		p.Chain[i].Draw(CamMatrix, ProjectionMatrix)
-	}
-}
-
-//InitGL initializes all of the graphics stuff for its sub parts
-func (p *Part) InitGL() {
-	for i := range p.Chain {
-		p.Chain[i].InitGL()
-	}
-}
-func (p *Part) HandleInput() {
-	for i := range p.Chain {
-		p.Chain[i].HandleInput()
-	}
-}
-
-//Operation can Hold Sketches or extrudes revolves and such
-type Operation interface {
-	InitGL()                     //Prepare OpenGL stuff
-	Draw(mgl32.Mat4, mgl32.Mat4) //Draw Opengl stuff
-	BuildTreeItem()              //Draw ui in tree
-	HandleInput()                //Handles Input
 }

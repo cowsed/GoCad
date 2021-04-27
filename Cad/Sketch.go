@@ -3,7 +3,6 @@ package cad
 import (
 	_ "embed" //Embed for loading shaders from file system
 	"fmt"
-	"log"
 
 	render "github.com/cowsed/GoCad/Render"
 	"github.com/go-gl/gl/v3.2-core/gl"
@@ -77,7 +76,6 @@ func (s *Sketch) MakeDrawData() {
 		s.glPoints[i*3+1] = s.Vertices[i].Y
 		s.glPoints[i*3+2] = 0.0
 	}
-	log.Println(s.glPoints)
 
 	s.glVertexStates = []uint32{2, 0, 2, 0}
 }
@@ -122,6 +120,21 @@ func (s *Sketch) Draw(CamMatrix, ProjectionMatrix mgl32.Mat4) {
 	gl.DrawArrays(gl.POINTS, 0, int32(len(s.glPoints)/3))
 
 }
+func (s *Sketch) DrawIDs(CamMatrix, ProjectionMatrix mgl32.Mat4) {
+
+	MVP := ProjectionMatrix.Mul4(CamMatrix)
+	MVPUniform := gl.GetUniformLocation(render.SketchProgram, gl.Str("MVP"+"\x00"))
+	gl.UniformMatrix4fv(MVPUniform, 1, false, &MVP[0])
+
+	gl.UseProgram(render.SketchProgram)
+
+	gl.BindVertexArray(s.vao)
+	gl.DrawArrays(gl.LINE_LOOP, 0, int32(len(s.glPoints)/3))
+
+	gl.DrawArrays(gl.POINTS, 0, int32(len(s.glPoints)/3))
+
+}
+
 func (s *Sketch) HandleInput() {
 
 }

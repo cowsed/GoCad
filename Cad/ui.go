@@ -3,17 +3,40 @@ package cad
 import (
 	"fmt"
 	"log"
+	"unsafe"
 
 	"github.com/go-gl/gl/v3.2-core/gl"
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/inkyblackness/imgui-go/v4"
 
 	render "github.com/cowsed/GoCad/Render"
 )
 
 //ShowDebugWindow shows debug information
-func ShowDebugWindow() {
-	io := imgui.CurrentIO()
+func ShowDebugWindow(p *Project, window *glfw.Window) {
 	imgui.Begin("Debug")
+	if imgui.Button("Save ID Buffer") {
+		p.SaveBuf()
+	}
+	mx, my := window.GetCursorPos()
+	fboMy := int32(render.WindowHeight) - int32(my)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, p.IDFramebuffer)
+	singlePixel := [4]uint8{}
+	gl.ReadPixels(int32(mx), fboMy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, unsafe.Pointer(&singlePixel[0]))
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+
+	imgui.Text(fmt.Sprint("Over:", singlePixel))
+
+	winSpace := mgl32.Project(mgl32.Vec3{1, 0, 0}, p.CamMatrix, p.ProjectionMatrix, 0, 0, render.WindowWidth, render.WindowHeight)
+	imgui.Text(fmt.Sprint("Window Space", winSpace))
+	mz := winSpace.Z()
+
+	worldSpace, err := mgl32.UnProject(mgl32.Vec3{float32(mx), float32(my), float32(mz)}, p.CamMatrix, p.ProjectionMatrix, 0, 0, render.WindowWidth, render.WindowHeight)
+
+	imgui.Text(fmt.Sprint("WorldSpace", worldSpace, worldSpace.Y()*render.WindowAspect, err))
+
+	io := imgui.CurrentIO()
 	imgui.Text(fmt.Sprintf("FPS: %.2f", io.Framerate()))
 
 	imgui.Text(fmt.Sprint("Selected", CurrentlySelected))
